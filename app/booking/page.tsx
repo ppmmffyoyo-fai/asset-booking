@@ -34,7 +34,6 @@ function BookingContent() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && user.email) {
-        // บังคับตัวพิมพ์เล็กและตัดช่องว่างตั้งแต่ต้นทาง
         setUserEmail(user.email.toLowerCase().trim());
       }
     };
@@ -58,7 +57,6 @@ function BookingContent() {
           end: item.end_time,
           extendedProps: { 
             ...item,
-            // บังคับคนสร้างเป็นตัวพิมพ์เล็กตอนดึงมาโชว์
             created_by: item.created_by ? item.created_by.toLowerCase().trim() : null 
           }
         };
@@ -84,34 +82,37 @@ function BookingContent() {
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const now = new Date().getTime(); 
-    const bookingStartStr = `${selectedDate}T${startTime}:00+07:00`; 
-    const bookingStartTimestamp = new Date(bookingStartStr).getTime();
+    
+    // สร้างช่วงเวลาโดยอิงจากวันที่เลือก (Lock ให้อยู่ในวันเดียวกัน 00:00 - 23:59)
+    const startObj = new Date(`${selectedDate}T${startTime}:00+07:00`);
+    const endObj = new Date(`${selectedDate}T${endTime}:00+07:00`);
+    const now = new Date();
 
-    if (bookingStartTimestamp < now) {
-      setErrorMessage("โปรดเลือกเวลาปัจจุบัน");
+    if (startObj.getTime() < now.getTime()) {
+      setErrorMessage("ไม่สามารถจองเวลาย้อนหลังได้ครับ");
       setErrorModalOpen(true);
       return;
     }
 
-    const newStart = bookingStartStr;
-    const newEnd = `${selectedDate}T${endTime}:00+07:00`;
-
-    if (new Date(newEnd).getTime() <= new Date(newStart).getTime()) {
+    if (endObj.getTime() <= startObj.getTime()) {
       setErrorMessage("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม");
       setErrorModalOpen(true);
       return;
     }
 
+    const isoStart = startObj.toISOString();
+    const isoEnd = endObj.toISOString();
+
+    // เช็กการจองซ้อน: (Start ใหม่ < End เก่า) AND (End ใหม่ > Start เก่า)
     const { data: conflicts } = await supabase
       .from('bookings')
       .select('*')
       .eq('asset_id', assetId)
-      .lt('start_time', newEnd)
-      .gt('end_time', newStart);
+      .lt('start_time', isoEnd)
+      .gt('end_time', isoStart);
 
     if (conflicts && conflicts.length > 0) {
-      setErrorMessage("เวลานี้มีคนจองไว้แล้วครับ");
+      setErrorMessage("ช่วงเวลานี้มีการจองไว้แล้วครับ โปรดเลือกเวลาอื่น");
       setErrorModalOpen(true);
       return;
     }
@@ -121,9 +122,9 @@ function BookingContent() {
         asset_id: assetId, 
         staff_name: `${firstName} ${lastName}`, 
         phone_number: phoneNumber, 
-        start_time: newStart, 
-        end_time: newEnd,
-        created_by: userEmail // บันทึกอีเมลที่ Clean แล้ว
+        start_time: isoStart, 
+        end_time: isoEnd,
+        created_by: userEmail
       }
     ]);
 
@@ -139,7 +140,6 @@ function BookingContent() {
 
   if (!hasMounted) return null;
 
-  // เช็กสิทธิ์ความเป็นเจ้าของ
   const isOwner = (event: any) => {
     if (!event || !userEmail) return false;
     const creator = event.extendedProps.created_by;
@@ -169,7 +169,6 @@ function BookingContent() {
         />
       </main>
 
-      {/* Modal จอง */}
       {modalOpen && (
         <div style={overlayStyle}>
           <div style={modalContentStyle}>
@@ -182,8 +181,8 @@ function BookingContent() {
               </div>
               <input type="text" placeholder="เบอร์โทรภายใน" value={phoneNumber} onChange={(e)=>setPhoneNumber(e.target.value)} required style={inputStyle} />
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <div style={{flex:1}}><label style={{fontSize:'12px'}}>เริ่ม</label><input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} /></div>
-                <div style={{flex:1}}><label style={{fontSize:'12px'}}>จบ</label><input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} /></div>
+                <div style={{flex:1}}><label style={{fontSize:'12px'}}>เริ่ม (00:00-23:59)</label><input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} /></div>
+                <div style={{flex:1}}><label style={{fontSize:'12px'}}>จบ (00:00-23:59)</label><input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} /></div>
               </div>
               <button type="submit" style={saveBtnStyle}>ยืนยันการจอง</button>
             </form>
@@ -191,7 +190,6 @@ function BookingContent() {
         </div>
       )}
 
-      {/* Modal รายละเอียด และ ปุ่มยกเลิก */}
       {detailModalOpen && selectedEvent && (
         <div style={overlayStyle}>
           <div style={modalContentStyle}>
@@ -216,19 +214,20 @@ function BookingContent() {
         </div>
       )}
 
-      {/* Modal Error/Success */}
       {errorModalOpen && (
         <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}>
-          <div style={{ ...modalContentStyle, textAlign: 'center' }}>
+          <div style={{ ...modalContentStyle, textAlign: 'center', borderTop: '5px solid #ef4444' }}>
             <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 15px' }} />
+            <p style={{fontWeight:'bold', color:'#b91c1c'}}>แจ้งเตือน</p>
             <p>{errorMessage}</p>
             <button onClick={() => setErrorModalOpen(false)} style={{ ...saveBtnStyle, backgroundColor: '#ef4444' }}>ปิด</button>
           </div>
         </div>
       )}
+
       {successModalOpen && (
         <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}>
-          <div style={{ ...modalContentStyle, textAlign: 'center' }}>
+          <div style={{ ...modalContentStyle, textAlign: 'center', borderTop: '5px solid #22c55e' }}>
             <CheckCircle2 size={48} color="#22c55e" style={{ margin: '0 auto 15px' }} />
             <h3 style={{ color: '#15803d' }}>จองสำเร็จ!</h3>
             <button onClick={() => setSuccessModalOpen(false)} style={{ ...saveBtnStyle, backgroundColor: '#22c55e' }}>ตกลง</button>
