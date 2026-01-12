@@ -8,7 +8,8 @@ export default function AssetListPage() {
   const [assets] = useState([
     { id: 'A001', name: 'เครื่องพิมพ์ 3D (3D Printer)', type: 'Lab Equipment' },
     { id: 'A002', name: 'กล้องจุลทรรศน์ (Microscope)', type: 'Lab Equipment' },
-    { id: 'A003', name: 'เครื่องฉายโปรเจคเตอร์ (Projector)', type: 'Office' },
+    { id: 'A003', name: 'เครื่องฉายโปรเจคเตอร์ (Projector)', type: 'Lab Equipment' },
+    { id: 'A004', name: 'เครื่องผลิตน้ำแข็ง', type: 'Lab Equipment' },
   ]);
 
   useEffect(() => {
