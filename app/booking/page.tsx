@@ -34,7 +34,7 @@ function BookingContent() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user && user.email) {
-        // เก็บอีเมลแบบตัวพิมพ์เล็กและตัดช่องว่าง
+        // บังคับตัวพิมพ์เล็กและตัดช่องว่างตั้งแต่ต้นทาง
         setUserEmail(user.email.toLowerCase().trim());
       }
     };
@@ -58,7 +58,7 @@ function BookingContent() {
           end: item.end_time,
           extendedProps: { 
             ...item,
-            // ตรวจสอบว่ามีค่า created_by ไหม ถ้ามีให้ทำเป็นตัวพิมพ์เล็ก
+            // บังคับคนสร้างเป็นตัวพิมพ์เล็กตอนดึงมาโชว์
             created_by: item.created_by ? item.created_by.toLowerCase().trim() : null 
           }
         };
@@ -73,7 +73,6 @@ function BookingContent() {
     const clickedDate = new Date(arg.dateStr + "T00:00:00");
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     if (clickedDate < today) {
       setErrorMessage("ไม่สามารถจองวันที่ผ่านมาแล้วได้ครับ");
       setErrorModalOpen(true);
@@ -124,7 +123,7 @@ function BookingContent() {
         phone_number: phoneNumber, 
         start_time: newStart, 
         end_time: newEnd,
-        created_by: userEmail // บันทึกอีเมลที่ตัดช่องว่างและตัวพิมพ์เล็กแล้ว
+        created_by: userEmail // บันทึกอีเมลที่ Clean แล้ว
       }
     ]);
 
@@ -140,7 +139,7 @@ function BookingContent() {
 
   if (!hasMounted) return null;
 
-  // --- ฟังก์ชันเช็กว่าเป็นเจ้าของรายการไหม ---
+  // เช็กสิทธิ์ความเป็นเจ้าของ
   const isOwner = (event: any) => {
     if (!event || !userEmail) return false;
     const creator = event.extendedProps.created_by;
@@ -158,18 +157,19 @@ function BookingContent() {
 
       <main style={calendarContainerStyle}>
         <FullCalendar
-  plugins={[daygridPlugin, interactionPlugin]}
-  initialView="dayGridMonth"
-  events={events}
-  displayEventTime={true}       // โชว์เวลาบนปฏิทินด้วย จะได้เห็นชัดๆ ว่ากี่โมง
-  nextDayThreshold="00:00:00"  // บังคับว่าถ้าไม่เลยเที่ยงคืน ห้ามเด้งไปอีกวัน
-  eventDisplay="block"          // ให้แถบสีมันเต็มช่อง จะได้ดูง่ายขึ้นครับ
-  timeZone="Asia/Bangkok"       // ล็อกเวลาไทยไว้เลย
-  dateClick={handleDateClick}
-  eventClick={(info) => { setSelectedEvent(info.event); setDetailModalOpen(true); }}
-/>
+          plugins={[daygridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          events={events}
+          displayEventTime={true}
+          displayEventEnd={true}
+          nextDayThreshold="00:00:00"
+          timeZone="Asia/Bangkok"
+          dateClick={handleDateClick}
+          eventClick={(info) => { setSelectedEvent(info.event); setDetailModalOpen(true); }}
+        />
+      </main>
 
-      {/* Modal จองใหม่ */}
+      {/* Modal จอง */}
       {modalOpen && (
         <div style={overlayStyle}>
           <div style={modalContentStyle}>
@@ -180,13 +180,8 @@ function BookingContent() {
                 <input type="text" placeholder="ชื่อ" value={firstName} onChange={(e)=>setFirstName(e.target.value)} required style={inputStyle} />
                 <input type="text" placeholder="นามสกุล" value={lastName} onChange={(e)=>setLastName(e.target.value)} required style={inputStyle} />
               </div>
-              <div style={{ marginBottom: '10px' }}>
-                <div style={{ position: 'relative' }}>
-                  <Phone size={14} style={{ position: 'absolute', left: '10px', top: '15px', color: '#64748b' }} />
-                  <input type="text" placeholder="เบอร์โทรภายใน" value={phoneNumber} onChange={(e)=>setPhoneNumber(e.target.value)} required style={{ ...inputStyle, paddingLeft: '32px' }} />
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <input type="text" placeholder="เบอร์โทรภายใน" value={phoneNumber} onChange={(e)=>setPhoneNumber(e.target.value)} required style={inputStyle} />
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <div style={{flex:1}}><label style={{fontSize:'12px'}}>เริ่ม</label><input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} /></div>
                 <div style={{flex:1}}><label style={{fontSize:'12px'}}>จบ</label><input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} /></div>
               </div>
@@ -196,30 +191,7 @@ function BookingContent() {
         </div>
       )}
 
-      {/* Modal Error */}
-      {errorModalOpen && (
-        <div style={overlayStyle}>
-          <div style={{ ...modalContentStyle, textAlign: 'center', borderTop: '5px solid #ef4444' }}>
-            <AlertCircle size={48} color="#ef4444" style={{ marginBottom: '15px', margin: '0 auto' }} />
-            <h3 style={{ color: '#b91c1c', marginBottom: '10px', fontWeight: 'bold' }}>แจ้งเตือน</h3>
-            <p style={{ fontSize: '16px', color: '#4b5563', fontWeight: 'normal' }}>{errorMessage}</p>
-            <button onClick={() => setErrorModalOpen(false)} style={{ ...saveBtnStyle, backgroundColor: '#ef4444', marginTop: '20px' }}>ปิด</button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Success */}
-      {successModalOpen && (
-        <div style={overlayStyle}>
-          <div style={{ ...modalContentStyle, textAlign: 'center', borderTop: '5px solid #22c55e' }}>
-            <CheckCircle2 size={48} color="#22c55e" style={{ marginBottom: '15px', margin: '0 auto' }} />
-            <h3 style={{ color: '#15803d', fontWeight: 'bold' }}>จองสำเร็จ!</h3>
-            <button onClick={() => setSuccessModalOpen(false)} style={{ ...saveBtnStyle, backgroundColor: '#22c55e', marginTop: '20px' }}>ตกลง</button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Detail & Delete */}
+      {/* Modal รายละเอียด และ ปุ่มยกเลิก */}
       {detailModalOpen && selectedEvent && (
         <div style={overlayStyle}>
           <div style={modalContentStyle}>
@@ -231,20 +203,35 @@ function BookingContent() {
                <p><strong>เวลา:</strong> {selectedEvent.title}</p>
             </div>
             
-            {/* ✅ เงื่อนไขใหม่: บังคับตัดช่องว่างและเทียบตัวพิมพ์เล็กทั้งหมด */}
             {isOwner(selectedEvent) && (
               <button onClick={async () => {
                 if(confirm('ต้องการยกเลิกการจองนี้ใช่หรือไม่?')){
                   const { error } = await supabase.from('bookings').delete().eq('id', selectedEvent.id);
-                  if (error) {
-                    alert("ลบไม่สำเร็จ: " + error.message);
-                  } else {
-                    setDetailModalOpen(false); 
-                    fetchBookings();
-                  }
+                  if (error) alert("ลบไม่สำเร็จ: " + error.message);
+                  else { setDetailModalOpen(false); fetchBookings(); }
                 }
               }} style={deleteBtnStyle}>ยกเลิกการจอง</button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal Error/Success */}
+      {errorModalOpen && (
+        <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}>
+          <div style={{ ...modalContentStyle, textAlign: 'center' }}>
+            <AlertCircle size={48} color="#ef4444" style={{ margin: '0 auto 15px' }} />
+            <p>{errorMessage}</p>
+            <button onClick={() => setErrorModalOpen(false)} style={{ ...saveBtnStyle, backgroundColor: '#ef4444' }}>ปิด</button>
+          </div>
+        </div>
+      )}
+      {successModalOpen && (
+        <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}>
+          <div style={{ ...modalContentStyle, textAlign: 'center' }}>
+            <CheckCircle2 size={48} color="#22c55e" style={{ margin: '0 auto 15px' }} />
+            <h3 style={{ color: '#15803d' }}>จองสำเร็จ!</h3>
+            <button onClick={() => setSuccessModalOpen(false)} style={{ ...saveBtnStyle, backgroundColor: '#22c55e' }}>ตกลง</button>
           </div>
         </div>
       )}
@@ -252,7 +239,7 @@ function BookingContent() {
   );
 }
 
-const logoutBtnStyle: React.CSSProperties = { position: 'absolute', top: '20px', right: '20px', padding: '8px 12px', border: '1px solid #fee2e2', borderRadius: '10px', color: '#ef4444', backgroundColor: '#fff', cursor: 'pointer', zIndex: 10 };
+const logoutBtnStyle: React.CSSProperties = { position: 'absolute', top: '20px', right: '20px', padding: '8px 12px', borderRadius: '10px', color: '#ef4444', backgroundColor: '#fff', border: '1px solid #fee2e2', cursor: 'pointer', zIndex: 10 };
 const backBtnStyle = { display: 'flex', alignItems: 'center', gap: '5px', border: 'none', background: 'none', color: '#64748b', cursor: 'pointer' };
 const calendarContainerStyle = { backgroundColor: '#fff', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', maxWidth: '900px', margin: '0 auto' };
 const overlayStyle: React.CSSProperties = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
