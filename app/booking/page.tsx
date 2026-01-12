@@ -158,15 +158,16 @@ function BookingContent() {
 
       <main style={calendarContainerStyle}>
         <FullCalendar
-          plugins={[daygridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          events={events}
-          displayEventTime={false}
-          dateClick={handleDateClick}
-          eventClick={(info) => { setSelectedEvent(info.event); setDetailModalOpen(true); }}
-          timeZone="Asia/Bangkok"
-        />
-      </main>
+  plugins={[daygridPlugin, interactionPlugin]}
+  initialView="dayGridMonth"
+  events={events}
+  displayEventTime={true}       // โชว์เวลาบนปฏิทินด้วย จะได้เห็นชัดๆ ว่ากี่โมง
+  nextDayThreshold="00:00:00"  // บังคับว่าถ้าไม่เลยเที่ยงคืน ห้ามเด้งไปอีกวัน
+  eventDisplay="block"          // ให้แถบสีมันเต็มช่อง จะได้ดูง่ายขึ้นครับ
+  timeZone="Asia/Bangkok"       // ล็อกเวลาไทยไว้เลย
+  dateClick={handleDateClick}
+  eventClick={(info) => { setSelectedEvent(info.event); setDetailModalOpen(true); }}
+/>
 
       {/* Modal จองใหม่ */}
       {modalOpen && (
