@@ -14,6 +14,7 @@ export default function AssetListPage() {
     { id: 'A002', name: 'กล้องจุลทรรศน์ (Microscope)', type: 'Lab Equipment' },
     { id: 'A003', name: 'เครื่องฉายโปรเจคเตอร์ (Projector)', type: 'Lab Equipment' },
     { id: 'A004', name: 'เครื่องผลิตน้ำแข็ง', type: 'Lab Equipment' },
+    { id: 'A005', name: 'เครื่องตัดเลเซอร์', type: 'Lab Equipment' },
   ]);
 
   useEffect(() => {
