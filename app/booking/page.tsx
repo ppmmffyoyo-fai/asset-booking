@@ -166,11 +166,15 @@ function BookingContent() {
           }}
           eventClick={(info) => { setSelectedEvent(info.event); setDetailModalOpen(true); }}
           eventContent={(arg) => {
-            // แก้ไข: โชว์เฉพาะเวลาเริ่ม และ ชื่อผู้จอง (ซ่อนเวลาสิ้นสุด)
+            // ดึงเวลาเริ่มและเวลาสิ้นสุดมาจัดรูปแบบ
             const sTime = arg.event.start?.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            const eTime = arg.event.end?.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+            
             return (
-              <div className="fc-event-main">
-                <span style={{ fontWeight: 'bold' }}>{sTime} น. {arg.event.title}</span>
+              <div className="fc-event-main" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ fontWeight: 'bold' }}>
+                  {sTime} - {eTime} น. {arg.event.title}
+                </span>
               </div>
             );
           }}
