@@ -12,7 +12,7 @@ function BookingContent() {
   const assetId = searchParams.get('id') || '';
   const assetNameFromUrl = searchParams.get('name') || '';
 
-  const [assetName] = useState(assetNameFromUrl || `รหัสครุภัณฑ์: ${assetId}`);
+  const [assetName] = useState(assetNameFromUrl || `Asset: ${assetId}`);
   const [events, setEvents] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -51,8 +51,9 @@ function BookingContent() {
         start: item.start_time,
         end: item.end_time,
         allDay: false,
-        backgroundColor: '#1e3a8a', // สีน้ำเงินเข้ม (เหมือนรูป 3D Printer)
+        backgroundColor: '#1e3a8a', 
         borderColor: '#1e3a8a',
+        textColor: '#ffffff',
         extendedProps: { 
           ...item,
           created_by: item.created_by ? item.created_by.toLowerCase().trim() : null 
@@ -70,7 +71,7 @@ function BookingContent() {
     const endObj = new Date(`${selectedDate}T${endTime}:00+07:00`);
 
     if (endObj.getTime() <= startObj.getTime()) {
-      setErrorMessage("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม (จองในวันเดียวกันเท่านั้น)");
+      setErrorMessage("End time must be after start time (Same day only)");
       setErrorModalOpen(true);
       return;
     }
@@ -86,7 +87,7 @@ function BookingContent() {
       .gt('end_time', isoStart);
 
     if (conflicts && conflicts.length > 0) {
-      setErrorMessage("ช่วงเวลานี้มีการจองไว้แล้วครับ");
+      setErrorMessage("This time is already booked.");
       setErrorModalOpen(true);
       return;
     }
@@ -108,25 +109,29 @@ function BookingContent() {
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
       <style>{`
-        /* เปลี่ยนจุดหน้าเวลาเป็นสีส้ม */
+        .fc-h-event {
+          background-color: #1e3a8a !important;
+          border: 1px solid #1e3a8a !important;
+          border-radius: 6px !important;
+          padding: 2px 4px !important;
+        }
         .fc-daygrid-event-dot {
           border: 4px solid #f97316 !important; 
+          margin-right: 5px !important;
         }
-        /* ปรับสีตัวอักษรเวลาในแถบสีน้ำเงิน */
         .fc-event-time, .fc-event-title {
-          color: white !important;
-          font-weight: bold;
+          color: #ffffff !important;
+          font-weight: 600 !important;
         }
-        /* ชื่อเดือนเป็นภาษาอังกฤษ */
-        .fc-toolbar-title {
-          text-transform: capitalize;
-        }
+        .fc-toolbar-title { text-transform: capitalize; color: #1e3a8a; }
+        .fc-col-header-cell-cushion { color: #64748b; text-decoration: none; }
+        .fc-daygrid-day-number { color: #1e293b; text-decoration: none; font-weight: bold; }
       `}</style>
 
-      <button onClick={() => supabase.auth.signOut().then(() => window.location.href='/login')} style={logoutBtnStyle}>ออกจากระบบ</button>
+      <button onClick={() => supabase.auth.signOut().then(() => window.location.href='/login')} style={logoutBtnStyle}>Logout</button>
       
       <header style={{ textAlign: 'center', marginBottom: '20px' }}>
-        <button onClick={() => window.location.href = '/'} style={backBtnStyle}><ArrowLeft size={18} /> กลับหน้าหลัก</button>
+        <button onClick={() => window.location.href = '/'} style={backBtnStyle}><ArrowLeft size={18} /> Back</button>
         <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e3a8a', marginTop: '10px' }}>{assetName}</h1>
       </header>
 
@@ -135,8 +140,9 @@ function BookingContent() {
           plugins={[daygridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           events={events}
-          locale="en" // ชื่อเดือนเป็นภาษาอังกฤษ
-          buttonText={{ today: 'วันนี้' }} // เปลี่ยนปุ่ม Today เป็นภาษาไทย
+          locale="en" 
+          // ปรับ today เป็นภาษาอังกฤษเรียบร้อยครับ
+          buttonText={{ today: 'Today' }} 
           eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
           displayEventTime={true}
           displayEventEnd={true}
@@ -162,7 +168,7 @@ function BookingContent() {
                 <div style={{flex:1}}><label style={{fontSize:'12px'}}>เริ่ม</label><input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} /></div>
                 <div style={{flex:1}}><label style={{fontSize:'12px'}}>จบ</label><input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} /></div>
               </div>
-              <button type="submit" style={saveBtnStyle}>ยืนยันการจอง</button>
+              <button type="submit" style={saveBtnStyle}>Confirm Booking</button>
             </form>
           </div>
         </div>
@@ -173,27 +179,26 @@ function BookingContent() {
         <div style={overlayStyle}>
           <div style={modalContentStyle}>
             <button onClick={() => setDetailModalOpen(false)} style={closeBtnStyle}><X size={20} /></button>
-            <h3 style={{textAlign:'center', marginBottom: '20px'}}>รายละเอียดการจอง</h3>
+            <h3 style={{textAlign:'center', marginBottom: '20px'}}>Booking Details</h3>
             <div style={{fontSize: '14px', lineHeight: '2'}}>
-              <p><strong>ผู้จอง:</strong> {selectedEvent.extendedProps.staff_name}</p>
-              <p><strong>เบอร์โทรภายใน:</strong> {selectedEvent.extendedProps.phone_number}</p>
-              <p><strong>เวลา:</strong> {new Date(selectedEvent.start).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} - {new Date(selectedEvent.end).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} น.</p>
+              <p><strong>Staff:</strong> {selectedEvent.extendedProps.staff_name}</p>
+              <p><strong>Extension:</strong> {selectedEvent.extendedProps.phone_number}</p>
+              <p><strong>Time:</strong> {new Date(selectedEvent.start).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} - {new Date(selectedEvent.end).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} น.</p>
             </div>
             {selectedEvent.extendedProps.created_by === userEmail && (
               <button onClick={async () => {
-                if(confirm('ยกเลิกการจองนี้ใช่หรือไม่?')){
+                if(confirm('Cancel this booking?')){
                   await supabase.from('bookings').delete().eq('id', selectedEvent.id);
                   setDetailModalOpen(false); fetchBookings();
                 }
-              }} style={deleteBtnStyle}>ยกเลิกการจอง</button>
+              }} style={deleteBtnStyle}>Delete Booking</button>
             )}
           </div>
         </div>
       )}
 
-      {/* Popups */}
       {errorModalOpen && <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}><div style={modalContentStyle}><AlertCircle size={48} color="#ef4444" style={{margin:'0 auto 10px'}}/><p style={{textAlign:'center'}}>{errorMessage}</p></div></div>}
-      {successModalOpen && <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}><div style={modalContentStyle}><CheckCircle2 size={48} color="#22c55e" style={{margin:'0 auto 10px'}}/><h3 style={{textAlign:'center'}}>จองสำเร็จ!</h3></div></div>}
+      {successModalOpen && <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}><div style={modalContentStyle}><CheckCircle2 size={48} color="#22c55e" style={{margin:'0 auto 10px'}}/><h3 style={{textAlign:'center'}}>Success!</h3></div></div>}
     </div>
   );
 }
