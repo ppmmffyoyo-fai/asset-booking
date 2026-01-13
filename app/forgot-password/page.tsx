@@ -14,8 +14,9 @@ export default function ForgotPassword() {
     
     // ส่งลิงก์ไปที่เมล โดยบอกว่าถ้ากดแล้วให้กลับมาที่หน้า /update-password
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/update-password`,
-    });
+  // บังคับให้ส่งกลับมาที่ชื่อสั้นเท่านั้น
+  redirectTo: 'https://assetbooking.vercel.app/reset-password', 
+});
 
     if (error) {
       alert("Error: " + error.message);
