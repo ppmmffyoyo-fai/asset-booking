@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  // 2. ล็อกอินด้วย Google (เพิ่มอันนี้)
+  // 2. ล็อกอินด้วย Google
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -40,34 +40,66 @@ export default function LoginPage() {
         
         <form onSubmit={handleLogin}>
           <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
-          <div style={{ marginBottom: '5px', marginTop: '15px' }}>
+          <div style={{ marginBottom: '25px', marginTop: '15px' }}>
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
           </div>
-          <div style={{ textAlign: 'right', marginBottom: '20px' }}>
-            <a href="/forgot-password" style={forgotPassLinkStyle}>ลืมรหัสผ่าน?</a>
-          </div>
+          
+          {/* ลบส่วนลืมรหัสผ่านออกแล้ว */}
+
           <button type="submit" disabled={loading} style={loginBtnStyle}>
             {loading ? 'กำลังโหลด...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
 
-        <div style={{ margin: '20px 0', color: '#94a3b8', fontSize: '12px' }}>หรือ</div>
+        <div style={{ margin: '25px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+          <span style={{ color: '#94a3b8', fontSize: '12px' }}>หรือ</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+        </div>
 
-        {/* ปุ่ม Google ที่กดได้จริง */}
+        {/* ปรับปรุงปุ่ม Google ให้เข้มขึ้น */}
         <button type="button" onClick={handleGoogleLogin} style={googleBtnStyle}>
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="google" />
-          เข้าใช้งานด้วย Google
+          <div style={googleIconWrapper}>
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="google" />
+          </div>
+          <span style={{ fontWeight: '600' }}>เข้าใช้งานด้วย Google</span>
         </button>
       </div>
     </div>
   );
 }
 
-// --- Styles (เหมือนเดิม) ---
+// --- Styles ---
 const containerStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' };
 const cardStyle: React.CSSProperties = { backgroundColor: '#fff', padding: '50px 40px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px', textAlign: 'center' };
 const logoWrapperStyle: React.CSSProperties = { backgroundColor: '#1e3a8a', width: '70px', height: '70px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' };
 const inputStyle = { width: '100%', padding: '14px 20px', borderRadius: '15px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', backgroundColor: '#fcfcfc' };
-const forgotPassLinkStyle = { fontSize: '13px', color: '#64748b', textDecoration: 'none' };
-const loginBtnStyle = { width: '100%', padding: '14px', borderRadius: '15px', backgroundColor: '#f97316', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' };
-const googleBtnStyle: React.CSSProperties = { width: '100%', padding: '12px', borderRadius: '15px', backgroundColor: '#fff', color: '#1e293b', border: '1px solid #e2e8f0', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' };
+
+// ปุ่ม Login สีส้ม
+const loginBtnStyle = { width: '100%', padding: '14px', borderRadius: '15px', backgroundColor: '#f97316', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' as 'bold', fontSize: '16px', marginBottom: '10px' };
+
+// ปุ่ม Google ดีไซน์ใหม่ (เข้มขึ้น)
+const googleBtnStyle: React.CSSProperties = { 
+  width: '100%', 
+  padding: '12px', 
+  borderRadius: '15px', 
+  backgroundColor: '#1e293b', // พื้นหลังเข้ม
+  color: '#fff', // ตัวอักษรขาว
+  border: 'none', 
+  cursor: 'pointer', 
+  fontSize: '15px',
+  display: 'flex', 
+  alignItems: 'center', 
+  justifyContent: 'center', 
+  gap: '12px',
+  transition: 'background-color 0.2s'
+};
+
+const googleIconWrapper = {
+  backgroundColor: '#fff',
+  padding: '5px',
+  borderRadius: '8px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center'
+};
