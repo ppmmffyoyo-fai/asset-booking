@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient'; 
-import { X, ArrowLeft, LogOut, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 import FullCalendar from '@fullcalendar/react';
 import daygridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -51,10 +51,7 @@ function BookingContent() {
         start: item.start_time,
         end: item.end_time,
         allDay: false,
-        extendedProps: { 
-          ...item,
-          created_by: item.created_by ? item.created_by.toLowerCase().trim() : null 
-        }
+        extendedProps: { ...item }
       }));
       setEvents(formatted as any);
     }
@@ -65,21 +62,21 @@ function BookingContent() {
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 1. สร้าง Object เวลาที่เลือก
-    const startObj = new Date(`${selectedDate}T${startTime}:00+07:00`);
-    const endObj = new Date(`${selectedDate}T${endTime}:00+07:00`);
+    // ตั้งค่าเวลาแบบ Local (เขตเวลาไทย +07:00)
+    const startObj = new Date(`${selectedDate}T${startTime}:00`);
+    const endObj = new Date(`${selectedDate}T${endTime}:00`);
     const now = new Date();
 
-    // 2. ตรวจสอบ: ห้ามจองย้อนหลัง
+    // 1. ตรวจสอบ: ห้ามจองย้อนหลัง (รวมถึงวันนี้ที่เวลาผ่านไปแล้ว)
     if (startObj < now) {
-      setErrorMessage("ไม่สามารถจองเวลาย้อนหลังได้ครับ");
+      setErrorMessage("ไม่สามารถจองย้อนหลังได้ กรุณาตรวจสอบวันที่และเวลาอีกครั้ง");
       setErrorModalOpen(true);
       return;
     }
 
-    // 3. ตรวจสอบ: เวลาจบต้องหลังเวลาเริ่ม
+    // 2. ตรวจสอบ: เวลาจบต้องหลังเวลาเริ่ม
     if (endObj <= startObj) {
-      setErrorMessage("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่ม");
+      setErrorMessage("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มจอง");
       setErrorModalOpen(true);
       return;
     }
@@ -87,24 +84,28 @@ function BookingContent() {
     const isoStart = startObj.toISOString();
     const isoEnd = endObj.toISOString();
 
-    // 4. ตรวจสอบ: ห้ามจองซ้อนทับ (Check Overlap)
+    // 3. ตรวจสอบ: ห้ามจองซ้อนทับเวลา (Overlap Check)
     const { data: conflicts } = await supabase
       .from('bookings')
       .select('*')
       .eq('asset_id', assetId)
-      .lt('start_time', isoEnd) // เริ่มต้นของรายการที่มีอยู่ น้อยกว่า เวลาจบที่เราเลือก
-      .gt('end_time', isoStart); // สิ้นสุดของรายการที่มีอยู่ มากกว่า เวลาเริ่มที่เราเลือก
+      .lt('start_time', isoEnd)
+      .gt('end_time', isoStart);
 
     if (conflicts && conflicts.length > 0) {
-      setErrorMessage("ช่วงเวลานี้มีการจองซ้อนทับกัน กรุณาเลือกเวลาอื่นครับ");
+      setErrorMessage("ช่วงเวลานี้มีการจองซ้อนทับกัน กรุณาเปลี่ยนเวลาจอง");
       setErrorModalOpen(true);
       return;
     }
 
-    // 5. บันทึกข้อมูล
+    // 4. บันทึกข้อมูล
     const { error } = await supabase.from('bookings').insert([{ 
-      asset_id: assetId, staff_name: `${firstName} ${lastName}`, 
-      phone_number: phoneNumber, start_time: isoStart, end_time: isoEnd, created_by: userEmail
+      asset_id: assetId, 
+      staff_name: `${firstName} ${lastName}`, 
+      phone_number: phoneNumber, 
+      start_time: isoStart, 
+      end_time: isoEnd, 
+      created_by: userEmail
     }]);
 
     if (!error) {
@@ -112,9 +113,6 @@ function BookingContent() {
       setSuccessModalOpen(true); 
       fetchBookings();
       setFirstName(''); setLastName(''); setPhoneNumber('');
-    } else {
-      setErrorMessage("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-      setErrorModalOpen(true);
     }
   };
 
@@ -123,20 +121,20 @@ function BookingContent() {
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
       <style>{`
+        /* กลับมาใช้สีน้ำเงินเดิม #1e3a8a */
         .fc-event {
-          background-color: #2563eb !important; 
+          background-color: #1e3a8a !important; 
           border: none !important;
           border-radius: 4px !important;
           padding: 2px 6px !important;
-          margin-bottom: 2px !important;
         }
         .fc-event-main {
           display: flex !important;
           align-items: center !important;
           color: white !important;
           font-size: 11px !important;
-          white-space: nowrap !important;
         }
+        /* จุดส้มอยู่หน้าเวลา */
         .fc-event-main::before {
           content: "";
           display: inline-block;
@@ -147,12 +145,10 @@ function BookingContent() {
           margin-right: 6px;
           flex-shrink: 0;
         }
-        .fc-toolbar-title { color: #1e3a8a; font-weight: bold; }
-        .fc-button-primary { background-color: #2563eb !important; border: none !important; }
+        .fc-toolbar-title { color: #1e3a8a; font-weight: bold; text-transform: capitalize; }
+        .fc-button-primary { background-color: #1e3a8a !important; border: none !important; }
       `}</style>
 
-      <button onClick={() => supabase.auth.signOut().then(() => window.location.href='/login')} style={logoutBtnStyle}>ออกจากระบบ</button>
-      
       <header style={{ textAlign: 'center', marginBottom: '20px' }}>
         <button onClick={() => window.location.href = '/'} style={backBtnStyle}><ArrowLeft size={18} /> กลับหน้าหลัก</button>
         <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e3a8a', marginTop: '10px' }}>{assetName}</h1>
@@ -174,7 +170,7 @@ function BookingContent() {
             return (
               <div className="fc-event-main">
                 <span style={{ fontWeight: 'bold' }}>{sTime}-{eTime} น.</span>
-                <span style={{ marginLeft: '5px', opacity: 0.9 }}>{arg.event.title}</span>
+                <span style={{ marginLeft: '5px' }}>{arg.event.title}</span>
               </div>
             );
           }}
@@ -226,13 +222,13 @@ function BookingContent() {
         </div>
       )}
 
-      {/* Popup แจ้งเตือนข้อผิดพลาด */}
+      {/* Pop-up แจ้งเตือนข้อผิดพลาด */}
       {errorModalOpen && (
         <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}>
           <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
             <AlertCircle size={48} color="#ef4444" style={{margin:'0 auto 10px', display:'block'}}/>
             <p style={{textAlign:'center', fontWeight:'bold', color:'#ef4444'}}>{errorMessage}</p>
-            <button onClick={() => setErrorModalOpen(false)} style={{...saveBtnStyle, backgroundColor:'#ef4444', marginTop:'20px'}}>ปิด</button>
+            <button onClick={() => setErrorModalOpen(false)} style={{...saveBtnStyle, backgroundColor:'#ef4444', marginTop:'20px'}}>ปิดหน้าต่าง</button>
           </div>
         </div>
       )}
@@ -242,7 +238,7 @@ function BookingContent() {
   );
 }
 
-const logoutBtnStyle: React.CSSProperties = { position: 'absolute', top: '20px', right: '20px', padding: '8px 12px', borderRadius: '10px', color: '#ef4444', backgroundColor: '#fff', border: '1px solid #fee2e2', cursor: 'pointer' };
+// CSS Styles เดิม
 const backBtnStyle = { border: 'none', background: 'none', color: '#64748b', cursor: 'pointer', display:'flex', alignItems:'center', gap:'5px' };
 const calendarContainerStyle = { backgroundColor: '#fff', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', maxWidth: '900px', margin: '0 auto' };
 const overlayStyle: React.CSSProperties = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
