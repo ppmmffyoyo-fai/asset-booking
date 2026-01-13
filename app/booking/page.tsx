@@ -75,13 +75,13 @@ function BookingContent() {
     const now = new Date();
 
     if (startObj.getTime() < now.getTime()) {
-      setErrorMessage("ไม่สามารถจองย้อนหลังได้ กรุณาตรวจสอบวันที่และเวลาอีกครั้ง");
+      setErrorMessage("กรุณาจองเวลาปัจจุบัน");
       setErrorModalOpen(true);
       return;
     }
 
     if (endObj.getTime() <= startObj.getTime()) {
-      setErrorMessage("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น");
+      setErrorMessage("เวลาสิ้นสุดไม่เกิน 23.59");
       setErrorModalOpen(true);
       return;
     }
