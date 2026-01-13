@@ -62,20 +62,20 @@ function BookingContent() {
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // ตั้งค่าเวลาแบบ Local (เขตเวลาไทย +07:00)
+    // สร้างเวลาที่จะจอง
     const startObj = new Date(`${selectedDate}T${startTime}:00`);
     const endObj = new Date(`${selectedDate}T${endTime}:00`);
     const now = new Date();
 
     // 1. ตรวจสอบ: ห้ามจองย้อนหลัง (รวมถึงวันนี้ที่เวลาผ่านไปแล้ว)
-    if (startObj < now) {
+    if (startObj.getTime() < now.getTime()) {
       setErrorMessage("ไม่สามารถจองย้อนหลังได้ กรุณาตรวจสอบวันที่และเวลาอีกครั้ง");
       setErrorModalOpen(true);
       return;
     }
 
-    // 2. ตรวจสอบ: เวลาจบต้องหลังเวลาเริ่ม
-    if (endObj <= startObj) {
+    // 2. ตรวจสอบ: เวลาจบต้องมากกว่าเริ่ม
+    if (endObj.getTime() <= startObj.getTime()) {
       setErrorMessage("เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มจอง");
       setErrorModalOpen(true);
       return;
@@ -84,7 +84,7 @@ function BookingContent() {
     const isoStart = startObj.toISOString();
     const isoEnd = endObj.toISOString();
 
-    // 3. ตรวจสอบ: ห้ามจองซ้อนทับเวลา (Overlap Check)
+    // 3. ตรวจสอบ: ห้ามจองซ้อนทับเวลา
     const { data: conflicts } = await supabase
       .from('bookings')
       .select('*')
@@ -121,30 +121,9 @@ function BookingContent() {
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
       <style>{`
-        /* กลับมาใช้สีน้ำเงินเดิม #1e3a8a */
-        .fc-event {
-          background-color: #1e3a8a !important; 
-          border: none !important;
-          border-radius: 4px !important;
-          padding: 2px 6px !important;
-        }
-        .fc-event-main {
-          display: flex !important;
-          align-items: center !important;
-          color: white !important;
-          font-size: 11px !important;
-        }
-        /* จุดส้มอยู่หน้าเวลา */
-        .fc-event-main::before {
-          content: "";
-          display: inline-block;
-          width: 5px;
-          height: 5px;
-          background-color: #f97316;
-          border-radius: 50%;
-          margin-right: 6px;
-          flex-shrink: 0;
-        }
+        .fc-event { background-color: #1e3a8a !important; border: none !important; border-radius: 4px !important; padding: 2px 6px !important; }
+        .fc-event-main { display: flex !important; align-items: center !important; color: white !important; font-size: 11px !important; }
+        .fc-event-main::before { content: ""; display: inline-block; width: 5px; height: 5px; background-color: #f97316; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
         .fc-toolbar-title { color: #1e3a8a; font-weight: bold; text-transform: capitalize; }
         .fc-button-primary { background-color: #1e3a8a !important; border: none !important; }
       `}</style>
@@ -162,7 +141,21 @@ function BookingContent() {
           locale="en" 
           buttonText={{ today: 'Today' }}
           nextDayThreshold="00:00:00"
-          dateClick={(arg) => { setSelectedDate(arg.dateStr); setModalOpen(true); }}
+          dateClick={(arg) => {
+            // --- จุดแก้สำคัญ: ดักการคลิกวันที่ย้อนหลัง ---
+            const clickedDate = new Date(arg.dateStr);
+            const today = new Date();
+            // รีเซ็ตเวลาเป็นเที่ยงคืนเพื่อเทียบแค่วันที่
+            today.setHours(0,0,0,0);
+            
+            if (clickedDate.getTime() < today.getTime()) {
+              setErrorMessage("ไม่สามารถจองวันที่ผ่านมาแล้วได้");
+              setErrorModalOpen(true);
+              return;
+            }
+            setSelectedDate(arg.dateStr); 
+            setModalOpen(true); 
+          }}
           eventClick={(info) => { setSelectedEvent(info.event); setDetailModalOpen(true); }}
           eventContent={(arg) => {
             const sTime = arg.event.start?.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
@@ -199,7 +192,18 @@ function BookingContent() {
         </div>
       )}
 
-      {/* Modal รายละเอียด */}
+      {/* Pop-up แจ้งเตือนข้อผิดพลาด */}
+      {errorModalOpen && (
+        <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}>
+          <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
+            <AlertCircle size={48} color="#ef4444" style={{margin:'0 auto 10px', display:'block'}}/>
+            <p style={{textAlign:'center', fontWeight:'bold', color:'#ef4444'}}>{errorMessage}</p>
+            <button onClick={() => setErrorModalOpen(false)} style={{...saveBtnStyle, backgroundColor:'#ef4444', marginTop:'20px'}}>รับทราบ</button>
+          </div>
+        </div>
+      )}
+
+      {successModalOpen && <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}><div style={modalContentStyle}><CheckCircle2 size={48} color="#22c55e" style={{margin:'0 auto 10px', display:'block'}}/><h3 style={{textAlign:'center'}}>จองสำเร็จ!</h3></div></div>}
       {detailModalOpen && selectedEvent && (
         <div style={overlayStyle}>
           <div style={modalContentStyle}>
@@ -207,7 +211,6 @@ function BookingContent() {
             <h3 style={{textAlign:'center', color:'#1e3a8a', marginBottom: '20px'}}>รายละเอียดการจอง</h3>
             <div style={{fontSize: '15px', lineHeight: '2'}}>
               <p><strong>ผู้จอง:</strong> {selectedEvent.extendedProps.staff_name}</p>
-              <p><strong>เบอร์โทรภายใน:</strong> {selectedEvent.extendedProps.phone_number}</p>
               <p><strong>เวลา:</strong> {new Date(selectedEvent.start).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} - {new Date(selectedEvent.end).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} น.</p>
             </div>
             {selectedEvent.extendedProps.created_by === userEmail && (
@@ -221,24 +224,10 @@ function BookingContent() {
           </div>
         </div>
       )}
-
-      {/* Pop-up แจ้งเตือนข้อผิดพลาด */}
-      {errorModalOpen && (
-        <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}>
-          <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
-            <AlertCircle size={48} color="#ef4444" style={{margin:'0 auto 10px', display:'block'}}/>
-            <p style={{textAlign:'center', fontWeight:'bold', color:'#ef4444'}}>{errorMessage}</p>
-            <button onClick={() => setErrorModalOpen(false)} style={{...saveBtnStyle, backgroundColor:'#ef4444', marginTop:'20px'}}>ปิดหน้าต่าง</button>
-          </div>
-        </div>
-      )}
-
-      {successModalOpen && <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}><div style={modalContentStyle}><CheckCircle2 size={48} color="#22c55e" style={{margin:'0 auto 10px', display:'block'}}/><h3 style={{textAlign:'center'}}>จองสำเร็จ!</h3></div></div>}
     </div>
   );
 }
 
-// CSS Styles เดิม
 const backBtnStyle = { border: 'none', background: 'none', color: '#64748b', cursor: 'pointer', display:'flex', alignItems:'center', gap:'5px' };
 const calendarContainerStyle = { backgroundColor: '#fff', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', maxWidth: '900px', margin: '0 auto' };
 const overlayStyle: React.CSSProperties = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
