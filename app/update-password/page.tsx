@@ -11,18 +11,12 @@ export default function UpdatePassword() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // เช็กว่ารหัสตรงกันไหม
     if (newPassword !== confirmPassword) {
       alert("รหัสผ่านไม่ตรงกันครับ!");
       return;
     }
-
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    });
-
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
       alert("Error: " + error.message);
     } else {
@@ -47,17 +41,11 @@ export default function UpdatePassword() {
   return (
     <div style={containerStyle}>
       <div style={cardStyle}>
-        <h2>Set New Password</h2>
-        <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '20px' }}>กรุณาระบุรหัสผ่านใหม่ของคุณ</p>
+        <h2 style={{ color: '#1e3a8a' }}>Set New Password</h2>
+        <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '20px' }}>กรุณาระบุรหัสผ่านใหม่ของคุณ 2 ครั้งให้ตรงกัน</p>
         <form onSubmit={handleUpdate}>
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={iconStyle} />
-            <input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required style={inputWithIconStyle} />
-          </div>
-          <div style={{ position: 'relative', marginTop: '10px' }}>
-            <Lock size={18} style={iconStyle} />
-            <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required style={inputWithIconStyle} />
-          </div>
+          <input type="password" placeholder="New Password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required style={inputStyle} />
+          <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required style={{...inputStyle, marginTop: '10px'}} />
           <button type="submit" disabled={loading} style={buttonStyle}>{loading ? 'Updating...' : 'Update Password'}</button>
         </form>
       </div>
@@ -65,9 +53,7 @@ export default function UpdatePassword() {
   );
 }
 
-// ใช้ Styles เดียวกันกับข้างบน
 const containerStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f1f5f9' };
-const cardStyle: React.CSSProperties = { backgroundColor: '#fff', padding: '40px', borderRadius: '24px', width: '100%', maxWidth: '400px', textAlign: 'center' };
+const cardStyle: React.CSSProperties = { backgroundColor: '#fff', padding: '40px', borderRadius: '24px', width: '100%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' };
+const inputStyle = { width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' };
 const buttonStyle = { width: '100%', padding: '12px', marginTop: '20px', borderRadius: '12px', backgroundColor: '#1e3a8a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' };
-const inputWithIconStyle = { width: '100%', padding: '12px 12px 12px 40px', borderRadius: '12px', border: '1px solid #e2e8f0', marginTop: '10px' };
-const iconStyle: React.CSSProperties = { position: 'absolute', left: '12px', top: '22px', color: '#94a3b8' };
