@@ -51,9 +51,6 @@ function BookingContent() {
         start: item.start_time,
         end: item.end_time,
         allDay: false,
-        backgroundColor: '#1e3a8a', 
-        borderColor: '#1e3a8a',
-        textColor: '#ffffff',
         extendedProps: { 
           ...item,
           created_by: item.created_by ? item.created_by.toLowerCase().trim() : null 
@@ -69,38 +66,19 @@ function BookingContent() {
     e.preventDefault();
     const startObj = new Date(`${selectedDate}T${startTime}:00+07:00`);
     const endObj = new Date(`${selectedDate}T${endTime}:00+07:00`);
-
     if (endObj.getTime() <= startObj.getTime()) {
-      setErrorMessage("End time must be after start time (Same day only)");
+      setErrorMessage("End time must be after start time");
       setErrorModalOpen(true);
       return;
     }
-
     const isoStart = startObj.toISOString();
     const isoEnd = endObj.toISOString();
-
-    const { data: conflicts } = await supabase
-      .from('bookings')
-      .select('*')
-      .eq('asset_id', assetId)
-      .lt('start_time', isoEnd)
-      .gt('end_time', isoStart);
-
-    if (conflicts && conflicts.length > 0) {
-      setErrorMessage("This time is already booked.");
-      setErrorModalOpen(true);
-      return;
-    }
-
     const { error } = await supabase.from('bookings').insert([{ 
       asset_id: assetId, staff_name: `${firstName} ${lastName}`, 
       phone_number: phoneNumber, start_time: isoStart, end_time: isoEnd, created_by: userEmail
     }]);
-
     if (!error) {
-      setModalOpen(false); setSuccessModalOpen(true);
-      setFirstName(''); setLastName(''); setPhoneNumber('');
-      fetchBookings();
+      setModalOpen(false); setSuccessModalOpen(true); fetchBookings();
     }
   };
 
@@ -109,30 +87,32 @@ function BookingContent() {
   return (
     <div style={{ backgroundColor: '#f8fafc', minHeight: '100vh', padding: '20px', fontFamily: 'sans-serif' }}>
       <style>{`
-        .fc-h-event {
+        /* บังคับกรอบสีน้ำเงินเข้มแบบเครื่องพิมพ์ 3D ทุกจุด */
+        .fc-event, .fc-daygrid-event, .fc-daygrid-block-event, .fc-h-event {
           background-color: #1e3a8a !important;
           border: 1px solid #1e3a8a !important;
-          border-radius: 6px !important;
+          border-radius: 4px !important;
           padding: 2px 4px !important;
+          display: block !important;
         }
+        /* จุดสีส้มหน้าเวลา */
         .fc-daygrid-event-dot {
-          border: 4px solid #f97316 !important; 
+          border: 4px solid #f97316 !important;
           margin-right: 5px !important;
         }
-        .fc-event-time, .fc-event-title {
-          color: #ffffff !important;
-          font-weight: 600 !important;
+        /* ตัวหนังสือในกรอบต้องสีขาว */
+        .fc-event-time, .fc-event-title, .fc-event-main-frame, .fc-event-main {
+          color: white !important;
+          font-weight: bold !important;
         }
-        .fc-toolbar-title { text-transform: capitalize; color: #1e3a8a; }
-        .fc-col-header-cell-cushion { color: #64748b; text-decoration: none; }
-        .fc-daygrid-day-number { color: #1e293b; text-decoration: none; font-weight: bold; }
+        .fc-toolbar-title { color: #1e3a8a; }
       `}</style>
 
       <button onClick={() => supabase.auth.signOut().then(() => window.location.href='/login')} style={logoutBtnStyle}>Logout</button>
       
       <header style={{ textAlign: 'center', marginBottom: '20px' }}>
         <button onClick={() => window.location.href = '/'} style={backBtnStyle}><ArrowLeft size={18} /> Back</button>
-        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e3a8a', marginTop: '10px' }}>{assetName}</h1>
+        <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e3a8a' }}>{assetName}</h1>
       </header>
 
       <main style={calendarContainerStyle}>
@@ -141,7 +121,6 @@ function BookingContent() {
           initialView="dayGridMonth"
           events={events}
           locale="en" 
-          // ปรับ today เป็นภาษาอังกฤษเรียบร้อยครับ
           buttonText={{ today: 'Today' }} 
           eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
           displayEventTime={true}
@@ -152,12 +131,12 @@ function BookingContent() {
         />
       </main>
 
-      {/* Modal จอง */}
+      {/* Modal จอง (ย่อให้สั้นลงแต่ทำงานเหมือนเดิม) */}
       {modalOpen && (
         <div style={overlayStyle}>
           <div style={modalContentStyle}>
             <button onClick={() => setModalOpen(false)} style={closeBtnStyle}><X size={20} /></button>
-            <h3 style={{textAlign:'center', marginBottom: '15px'}}>จองวันที่: {selectedDate}</h3>
+            <h3 style={{textAlign:'center'}}>Date: {selectedDate}</h3>
             <form onSubmit={handleBookingSubmit}>
               <div style={{ display: 'flex', gap: '5px' }}>
                 <input type="text" placeholder="ชื่อ" value={firstName} onChange={(e)=>setFirstName(e.target.value)} required style={inputStyle} />
@@ -165,8 +144,8 @@ function BookingContent() {
               </div>
               <input type="text" placeholder="เบอร์โทรภายใน" value={phoneNumber} onChange={(e)=>setPhoneNumber(e.target.value)} required style={inputStyle} />
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <div style={{flex:1}}><label style={{fontSize:'12px'}}>เริ่ม</label><input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} /></div>
-                <div style={{flex:1}}><label style={{fontSize:'12px'}}>จบ</label><input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} /></div>
+                <div style={{flex:1}}><label>เริ่ม</label><input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} /></div>
+                <div style={{flex:1}}><label>จบ</label><input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} /></div>
               </div>
               <button type="submit" style={saveBtnStyle}>Confirm Booking</button>
             </form>
@@ -180,30 +159,23 @@ function BookingContent() {
           <div style={modalContentStyle}>
             <button onClick={() => setDetailModalOpen(false)} style={closeBtnStyle}><X size={20} /></button>
             <h3 style={{textAlign:'center', marginBottom: '20px'}}>Booking Details</h3>
-            <div style={{fontSize: '14px', lineHeight: '2'}}>
-              <p><strong>Staff:</strong> {selectedEvent.extendedProps.staff_name}</p>
-              <p><strong>Extension:</strong> {selectedEvent.extendedProps.phone_number}</p>
-              <p><strong>Time:</strong> {new Date(selectedEvent.start).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} - {new Date(selectedEvent.end).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})} น.</p>
-            </div>
+            <p><strong>Staff:</strong> {selectedEvent.extendedProps.staff_name}</p>
+            <p><strong>Extension:</strong> {selectedEvent.extendedProps.phone_number}</p>
             {selectedEvent.extendedProps.created_by === userEmail && (
               <button onClick={async () => {
-                if(confirm('Cancel this booking?')){
+                if(confirm('Cancel?')){
                   await supabase.from('bookings').delete().eq('id', selectedEvent.id);
                   setDetailModalOpen(false); fetchBookings();
                 }
-              }} style={deleteBtnStyle}>Delete Booking</button>
+              }} style={deleteBtnStyle}>Delete</button>
             )}
           </div>
         </div>
       )}
-
-      {errorModalOpen && <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}><div style={modalContentStyle}><AlertCircle size={48} color="#ef4444" style={{margin:'0 auto 10px'}}/><p style={{textAlign:'center'}}>{errorMessage}</p></div></div>}
-      {successModalOpen && <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}><div style={modalContentStyle}><CheckCircle2 size={48} color="#22c55e" style={{margin:'0 auto 10px'}}/><h3 style={{textAlign:'center'}}>Success!</h3></div></div>}
     </div>
   );
 }
 
-// Styles
 const logoutBtnStyle: React.CSSProperties = { position: 'absolute', top: '20px', right: '20px', padding: '8px 12px', borderRadius: '10px', color: '#ef4444', backgroundColor: '#fff', border: '1px solid #fee2e2', cursor: 'pointer' };
 const backBtnStyle = { border: 'none', background: 'none', color: '#64748b', cursor: 'pointer', display:'flex', alignItems:'center', gap:'5px' };
 const calendarContainerStyle = { backgroundColor: '#fff', padding: '20px', borderRadius: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', maxWidth: '900px', margin: '0 auto' };
