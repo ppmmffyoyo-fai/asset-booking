@@ -28,7 +28,7 @@ function BookingContent() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [department, setDepartment] = useState(''); // เก็บหน่วยงาน (location)
+  const [department, setDepartment] = useState(''); 
   const [startTime, setStartTime] = useState('08:30');
   const [endTime, setEndTime] = useState('16:30');
 
@@ -74,12 +74,14 @@ function BookingContent() {
     const endObj = new Date(`${selectedDate}T${endTime}:00`);
     const now = new Date();
 
+    // แก้ไขข้อความแจ้งเตือนที่ 1
     if (startObj.getTime() < now.getTime()) {
       setErrorMessage("กรุณาจองเวลาปัจจุบัน");
       setErrorModalOpen(true);
       return;
     }
 
+    // แก้ไขข้อความแจ้งเตือนที่ 2
     if (endObj.getTime() <= startObj.getTime()) {
       setErrorMessage("เวลาสิ้นสุดไม่เกิน 23.59");
       setErrorModalOpen(true);
@@ -102,12 +104,11 @@ function BookingContent() {
       return;
     }
 
-    // บันทึกข้อมูล โดยเอาหน่วยงานใส่ในฟิลด์ location
     const { error } = await supabase.from('bookings').insert([{ 
       asset_id: assetId, 
       staff_name: `${firstName} ${lastName}`, 
       phone_number: phoneNumber,
-      location: department, // บันทึกหน่วยงานลงในคอลัมน์ location
+      location: department, 
       start_time: isoStart, 
       end_time: isoEnd, 
       created_by: userEmail
@@ -117,7 +118,6 @@ function BookingContent() {
       setModalOpen(false); 
       setSuccessModalOpen(true); 
       fetchBookings();
-      // ล้างค่าฟอร์ม
       setFirstName(''); setLastName(''); setPhoneNumber(''); setDepartment('');
     }
   };
@@ -200,7 +200,8 @@ function BookingContent() {
                   <input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} />
                 </div>
                 <div style={{flex:1}}>
-                  <label style={labelStyle}>เวลาสิ้นสุด</label>
+                  {/* เพิ่มข้อความ (ไม่เกิน 23.59) */}
+                  <label style={labelStyle}>เวลาสิ้นสุด <span style={{fontSize:'10px', color:'#f97316'}}>(ไม่เกิน 23.59)</span></label>
                   <input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} />
                 </div>
               </div>
@@ -234,7 +235,7 @@ function BookingContent() {
         </div>
       )}
 
-      {/* Pop-up แจ้งเตือน */}
+      {/* Pop-up แจ้งเตือนข้อผิดพลาด */}
       {errorModalOpen && (
         <div style={overlayStyle} onClick={() => setErrorModalOpen(false)}>
           <div style={modalContentStyle} onClick={e => e.stopPropagation()}>
@@ -245,7 +246,24 @@ function BookingContent() {
         </div>
       )}
 
-      {successModalOpen && <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}><div style={modalContentStyle}><CheckCircle2 size={48} color="#22c55e" style={{margin:'0 auto 10px', display:'block'}}/><h3 style={{textAlign:'center'}}>จองสำเร็จ!</h3></div></div>}
+      {/* Modal จองสำเร็จ พร้อมปุ่มตกลง */}
+      {successModalOpen && (
+        <div style={overlayStyle} onClick={() => setSuccessModalOpen(false)}>
+          <div style={{...modalContentStyle, textAlign: 'center'}} onClick={e => e.stopPropagation()}>
+            <CheckCircle2 size={55} color="#22c55e" style={{margin:'0 auto 15px', display:'block'}}/>
+            <h3 style={{marginBottom: '10px', color: '#1e293b'}}>จองสำเร็จ!</h3>
+            <p style={{color: '#64748b', fontSize: '14px', marginBottom: '20px'}}>ข้อมูลการจองของคุณถูกบันทึกแล้ว</p>
+            
+            {/* ปุ่มตกลง สำหรับจองสำเร็จ */}
+            <button 
+              onClick={() => setSuccessModalOpen(false)} 
+              style={{...saveBtnStyle, backgroundColor:'#22c55e', marginTop:'10px'}}
+            >
+              ตกลง
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
