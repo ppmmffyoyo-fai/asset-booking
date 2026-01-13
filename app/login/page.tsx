@@ -10,7 +10,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // 1. ล็อกอินด้วย Email/Password
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -23,7 +22,6 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  // 2. ล็อกอินด้วย Google
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -40,11 +38,11 @@ export default function LoginPage() {
         
         <form onSubmit={handleLogin}>
           <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
-          <div style={{ marginBottom: '25px', marginTop: '15px' }}>
+          <div style={{ marginTop: '15px', marginBottom: '25px' }}>
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
           </div>
           
-          {/* ลบส่วนลืมรหัสผ่านออกแล้ว */}
+          {/* ลบลิงก์ลืมรหัสผ่านออกถาวร */}
 
           <button type="submit" disabled={loading} style={loginBtnStyle}>
             {loading ? 'กำลังโหลด...' : 'เข้าสู่ระบบ'}
@@ -57,7 +55,7 @@ export default function LoginPage() {
           <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
         </div>
 
-        {/* ปรับปรุงปุ่ม Google ให้เข้มขึ้น */}
+        {/* ปุ่ม Google แบบเข้ม (Dark Mode Style) */}
         <button type="button" onClick={handleGoogleLogin} style={googleBtnStyle}>
           <div style={googleIconWrapper}>
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="google" />
@@ -74,25 +72,22 @@ const containerStyle: React.CSSProperties = { display: 'flex', alignItems: 'cent
 const cardStyle: React.CSSProperties = { backgroundColor: '#fff', padding: '50px 40px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px', textAlign: 'center' };
 const logoWrapperStyle: React.CSSProperties = { backgroundColor: '#1e3a8a', width: '70px', height: '70px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' };
 const inputStyle = { width: '100%', padding: '14px 20px', borderRadius: '15px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', backgroundColor: '#fcfcfc' };
+const loginBtnStyle = { width: '100%', padding: '14px', borderRadius: '15px', backgroundColor: '#f97316', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' as 'bold', fontSize: '16px' };
 
-// ปุ่ม Login สีส้ม
-const loginBtnStyle = { width: '100%', padding: '14px', borderRadius: '15px', backgroundColor: '#f97316', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' as 'bold', fontSize: '16px', marginBottom: '10px' };
-
-// ปุ่ม Google ดีไซน์ใหม่ (เข้มขึ้น)
 const googleBtnStyle: React.CSSProperties = { 
   width: '100%', 
   padding: '12px', 
   borderRadius: '15px', 
-  backgroundColor: '#1e293b', // พื้นหลังเข้ม
-  color: '#fff', // ตัวอักษรขาว
+  backgroundColor: '#1e293b', // สี Slate-800 เข้มสะใจ
+  color: '#fff', 
   border: 'none', 
   cursor: 'pointer', 
-  fontSize: '15px',
+  fontWeight: '500', 
   display: 'flex', 
   alignItems: 'center', 
   justifyContent: 'center', 
   gap: '12px',
-  transition: 'background-color 0.2s'
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
 };
 
 const googleIconWrapper = {
