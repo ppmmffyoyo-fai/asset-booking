@@ -74,14 +74,12 @@ function BookingContent() {
     const endObj = new Date(`${selectedDate}T${endTime}:00`);
     const now = new Date();
 
-    // แก้ไขข้อความแจ้งเตือนที่ 1
     if (startObj.getTime() < now.getTime()) {
       setErrorMessage("กรุณาจองเวลาปัจจุบัน");
       setErrorModalOpen(true);
       return;
     }
 
-    // แก้ไขข้อความแจ้งเตือนที่ 2
     if (endObj.getTime() <= startObj.getTime()) {
       setErrorMessage("เวลาสิ้นสุดไม่เกิน 23.59");
       setErrorModalOpen(true);
@@ -168,6 +166,7 @@ function BookingContent() {
           }}
           eventClick={(info) => { setSelectedEvent(info.event); setDetailModalOpen(true); }}
           eventContent={(arg) => {
+            // แก้ไข: โชว์เฉพาะเวลาเริ่ม และ ชื่อผู้จอง (ซ่อนเวลาสิ้นสุด)
             const sTime = arg.event.start?.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
             return (
               <div className="fc-event-main">
@@ -200,8 +199,8 @@ function BookingContent() {
                   <input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} required style={inputStyle} />
                 </div>
                 <div style={{flex:1}}>
-                  {/* เพิ่มข้อความ (ไม่เกิน 23.59) */}
-                  <label style={labelStyle}>เวลาสิ้นสุด <span style={{fontSize:'10px', color:'#f97316'}}>(ไม่เกิน 23.59)</span></label>
+                  {/* แก้ไข: เปลี่ยนสีข้อความเป็นสีเทา (#94a3b8) */}
+                  <label style={labelStyle}>เวลาสิ้นสุด <span style={{fontSize:'10px', color:'#94a3b8', fontWeight: 'normal'}}>(ไม่เกิน 23.59)</span></label>
                   <input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} required style={inputStyle} />
                 </div>
               </div>
@@ -254,7 +253,6 @@ function BookingContent() {
             <h3 style={{marginBottom: '10px', color: '#1e293b'}}>จองสำเร็จ!</h3>
             <p style={{color: '#64748b', fontSize: '14px', marginBottom: '20px'}}>ข้อมูลการจองของคุณถูกบันทึกแล้ว</p>
             
-            {/* ปุ่มตกลง สำหรับจองสำเร็จ */}
             <button 
               onClick={() => setSuccessModalOpen(false)} 
               style={{...saveBtnStyle, backgroundColor:'#22c55e', marginTop:'10px'}}
