@@ -1,36 +1,15 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Lock, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [sessionError, setSessionError] = useState(false);
   const [showPass1, setShowPass1] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
-
-  useEffect(() => {
-    const initSession = async () => {
-      // 1. ลองเช็ค Session ปกติก่อน
-      const { data } = await supabase.auth.getSession();
-      
-      // 2. ถ้าไม่มี Session ให้ลองรอเผื่อระบบกำลังประมวลผล Token ใน URL
-      if (!data.session) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const { data: retryData } = await supabase.auth.getSession();
-        
-        // 3. ถ้ายังไม่มีอีก ให้เช็คว่าใน URL มี access_token ไหม 
-        // ถ้ามีแสดงว่าลิงก์ยังใช้ได้ แค่ Supabase ยังไม่ได้สร้าง Session ให้
-        if (!retryData.session && !window.location.hash.includes('access_token')) {
-          setSessionError(true);
-        }
-      }
-    };
-    initSession();
-  }, []);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,36 +19,23 @@ export default function ResetPassword() {
     }
 
     setLoading(true);
-    // คำสั่งนี้จะพยายามใช้ Token จาก URL อัตโนมัติเพื่อเปลี่ยนรหัส
+
+    // แก้ตรงนี้: ใช้การเปลี่ยนรหัสผ่านโดยตรง 
+    // ถ้ามี Token อยู่ใน URL ระบบจะพยายามเปลี่ยนให้ทันที
     const { error } = await supabase.auth.updateUser({
       password: newPassword
     });
 
     if (error) {
-      // ถ้า Error บอกว่า session missing ให้แจ้งผู้ใช้ขอลิงก์ใหม่
-      console.error(error);
-      alert("เกิดข้อผิดพลาด: " + error.message);
-      setSessionError(true);
+      console.error("Update error:", error);
+      // ถ้า Error เราจะไม่ไล่คนไปหน้า Expired ทันที แต่จะลองบอกให้เขาส่งเมลใหม่
+      alert("เกิดข้อผิดพลาด: " + error.message + " (กรุณาขอลิงก์รีเซ็ตรหัสผ่านใหม่อีกครั้ง)");
     } else {
       setSuccess(true);
       setTimeout(() => { window.location.href = '/login'; }, 3000);
     }
     setLoading(false);
   };
-
-  // --- UI เหมือนเดิม แต่ลดความเข้มงวดของหน้า Error ลง ---
-  if (sessionError) {
-    return (
-      <div style={containerStyle}>
-        <div style={cardStyle}>
-          <AlertCircle size={60} color="#ef4444" style={{ margin: '0 auto 20px' }} />
-          <h2 style={{ color: '#ef4444' }}>พบปัญหาการเชื่อมต่อ</h2>
-          <p style={{ color: '#64748b' }}>กรุณากดขอลิงก์ใหม่อีกครั้ง และใช้ลิงก์ล่าสุดในอีเมลครับ</p>
-          <button onClick={() => window.location.href = '/forgot-password'} style={buttonStyle}>ขอลิงก์ใหม่</button>
-        </div>
-      </div>
-    );
-  }
 
   if (success) {
     return (
@@ -112,6 +78,6 @@ export default function ResetPassword() {
 // สไตล์เดิม
 const containerStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' };
 const cardStyle: React.CSSProperties = { backgroundColor: '#fff', padding: '40px 30px', borderRadius: '28px', width: '90%', maxWidth: '400px', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' };
-const inputStyle: React.CSSProperties = { width: '100%', padding: '14px 45px 14px 15px', borderRadius: '14px', border: '2px solid #e2e8f0', backgroundColor: '#ffffff', fontSize: '16px', color: '#1e293b' };
+const inputStyle: React.CSSProperties = { width: '100%', padding: '14px 45px 14px 15px', borderRadius: '14px', border: '2px solid #e2e8f0', backgroundColor: '#ffffff', fontSize: '16px', color: '#1e293b', outline: 'none' };
 const eyeBtnStyle: React.CSSProperties = { position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer' };
 const buttonStyle: React.CSSProperties = { width: '100%', padding: '14px', borderRadius: '14px', backgroundColor: '#1e3a8a', color: '#fff', border: 'none', fontWeight: 'bold', fontSize: '16px' };
