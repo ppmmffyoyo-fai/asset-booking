@@ -38,63 +38,50 @@ export default function LoginPage() {
         
         <form onSubmit={handleLogin}>
           <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={inputStyle} />
-          <div style={{ marginTop: '15px', marginBottom: '25px' }}>
+          <div style={{ marginTop: '15px', marginBottom: '30px' }}> {/* เพิ่มระยะห่างล่างแทนที่ลืมรหัสผ่าน */}
             <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={inputStyle} />
           </div>
           
-          {/* ลบลิงก์ลืมรหัสผ่านออกถาวร */}
-
           <button type="submit" disabled={loading} style={loginBtnStyle}>
             {loading ? 'กำลังโหลด...' : 'เข้าสู่ระบบ'}
           </button>
         </form>
 
-        <div style={{ margin: '25px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ margin: '20px 0', color: '#94a3b8', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
-          <span style={{ color: '#94a3b8', fontSize: '12px' }}>หรือ</span>
+          <span>หรือ</span>
           <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
         </div>
 
-        {/* ปุ่ม Google แบบเข้ม (Dark Mode Style) */}
+        {/* ปุ่ม Google สีขาว ตามที่พี่ต้องการ แต่ตัวหนังสือเข้มปั้ด */}
         <button type="button" onClick={handleGoogleLogin} style={googleBtnStyle}>
-          <div style={googleIconWrapper}>
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="google" />
-          </div>
-          <span style={{ fontWeight: '600' }}>เข้าใช้งานด้วย Google</span>
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="google" />
+          <span style={{ color: '#1e293b', fontWeight: '800', fontSize: '15px' }}>เข้าใช้งานด้วย Google</span>
         </button>
       </div>
     </div>
   );
 }
 
-// --- Styles ---
+// --- Styles (ปรับตามรูปเป๊ะๆ) ---
 const containerStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc' };
 const cardStyle: React.CSSProperties = { backgroundColor: '#fff', padding: '50px 40px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px', textAlign: 'center' };
 const logoWrapperStyle: React.CSSProperties = { backgroundColor: '#1e3a8a', width: '70px', height: '70px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' };
 const inputStyle = { width: '100%', padding: '14px 20px', borderRadius: '15px', border: '1px solid #e2e8f0', fontSize: '15px', outline: 'none', backgroundColor: '#fcfcfc' };
 const loginBtnStyle = { width: '100%', padding: '14px', borderRadius: '15px', backgroundColor: '#f97316', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' as 'bold', fontSize: '16px' };
 
+// ปุ่ม Google แบบสีขาว คลีนๆ แต่ตัวหนังสือเข้ม
 const googleBtnStyle: React.CSSProperties = { 
   width: '100%', 
   padding: '12px', 
   borderRadius: '15px', 
-  backgroundColor: '#1e293b', // สี Slate-800 เข้มสะใจ
-  color: '#fff', 
-  border: 'none', 
+  backgroundColor: '#fff', 
+  color: '#1e293b', 
+  border: '1px solid #e2e8f0', 
   cursor: 'pointer', 
-  fontWeight: '500', 
   display: 'flex', 
   alignItems: 'center', 
   justifyContent: 'center', 
-  gap: '12px',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-};
-
-const googleIconWrapper = {
-  backgroundColor: '#fff',
-  padding: '5px',
-  borderRadius: '8px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center'
+  gap: '10px',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
 };
